@@ -14,11 +14,16 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import com.alibaba.fastjson.JSONObject;
+import com.facebook.drawee.backends.pipeline.Fresco;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 import java.util.ArrayList;
+
+import lib.lhh.fiv.library.FrescoZoomImageView;
 
 public class MainActivity extends Activity {
     private static final String TAG = "mark";
@@ -28,15 +33,18 @@ public class MainActivity extends Activity {
     private String url = "https://lindum.top/yiyan/api.php?index=";
     private int index = -1;
     private int sentenceQuantity = 0;
+    private FrescoZoomImageView img;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Fresco.initialize(this);
         // 控件绑定
         {
             sentence = findViewById(R.id.sentence);
             source = findViewById(R.id.source);
+            img = (FrescoZoomImageView) findViewById(R.id.img);
         }
         requestPermission();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN); //隐藏状态栏
@@ -52,6 +60,7 @@ public class MainActivity extends Activity {
         Typeface tf = Typeface.createFromAsset(mgr, "fonts/1.ttf");
         sentence.setTypeface(tf);
         source.setTypeface(tf);
+
     }
 
     /**
@@ -59,6 +68,17 @@ public class MainActivity extends Activity {
      */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // 获取每日一图
+        try {
+            String mImgUrl = getImgURL("https://api.ixiaowai.cn/api/api.php?return=json");
+//            System.out.println(temp);
+            // 设置每日一图
+//            Bitmap temp = img.getDrawingCache();
+            img.loadView(mImgUrl,R.mipmap.balloon);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         source.setVisibility(View.VISIBLE);
         if (keyCode == KeyEvent.KEYCODE_G) {
             try {
@@ -115,6 +135,23 @@ public class MainActivity extends Activity {
 //            return true;
 //        }
         return super.onKeyDown(keyCode, event);
+    }
+
+    /**
+     * 获取每日一图
+     */
+    public static String getImgURL(String url) throws IOException {
+        Document document = Jsoup.connect(url)
+                .maxBodySize(Integer.MAX_VALUE)
+                .data("query", "Java")
+                .cookie("auth", "token")
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62")
+                .timeout(10000)
+                .get();
+        String temp = document.getElementsByTag("body").text();
+        JSONObject object = JSONObject
+                .parseObject(temp);
+        return object.getString("imgurl");
     }
 
     /**
