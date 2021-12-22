@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">TestBtn</string>
+    <string name="word">每日一句</string>
+    <string name="source">——《论语》</string>
 </resources>

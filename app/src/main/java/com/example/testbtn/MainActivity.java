@@ -2,16 +2,15 @@ package com.example.testbtn;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
+import android.content.res.AssetManager;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
@@ -24,6 +23,7 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
     private static final String TAG = "mark";
     private TextView sentence;
+    private TextView source;
     boolean isPermissionRequested;
     private String url = "https://lindum.top/yiyan/api.php?index=";
     private int index = -1;
@@ -33,30 +33,43 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // 控件绑定
+        {
+            sentence = findViewById(R.id.sentence);
+            source = findViewById(R.id.source);
+        }
         requestPermission();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN); //隐藏状态栏
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
         try {
             sentenceQuantity = Integer.parseInt(getSentence(url + index));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        sentence = findViewById(R.id.sentence);
+        // 设置字体样式
+        AssetManager mgr = getAssets();
+        Typeface tf = Typeface.createFromAsset(mgr, "fonts/1.ttf");
+        sentence.setTypeface(tf);
+        source.setTypeface(tf);
     }
 
+    /**
+     * 按键监听
+     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        //35 35 31 36 34 33
+        source.setVisibility(View.VISIBLE);
         if (keyCode == KeyEvent.KEYCODE_G) {
             try {
                 if (index < sentenceQuantity) {
                     index++;
                     String temp = getSentence(url + index);
+                    String upText = temp.split("——")[0];
+                    String downText = "——" + temp.split("——")[1];
                     Log.e("sentence", temp);
-                    sentence.setText(temp);
+                    sentence.setText(upText);
+                    source.setText(downText);
                 }
 
             } catch (IOException e) {
@@ -70,8 +83,11 @@ public class MainActivity extends Activity {
                 if (index >= 1) {
                     index--;
                     String temp = getSentence(url + index);
+                    String upText = temp.split("——")[0];
+                    String downText = "——" + temp.split("——")[1];
                     Log.e("sentence", temp);
-                    sentence.setText(temp);
+                    sentence.setText(upText);
+                    source.setText(downText);
                 }
 
             } catch (IOException e) {
@@ -84,8 +100,11 @@ public class MainActivity extends Activity {
             try {
                 String temp = getSentence(url.split("\\?")[0]);
                 Log.e("sentence", url.split("\\?")[0]);
-                sentence.setText(temp);
-
+                String upText = temp.split("——")[0];
+                String downText = "——" + temp.split("——")[1];
+                Log.e("sentence", temp);
+                sentence.setText(upText);
+                source.setText(downText);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -98,6 +117,9 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
+    /**
+     * 获取每日一句
+     */
     public static String getSentence(String url) throws IOException {
         Document document = Jsoup.connect(url)
                 .maxBodySize(Integer.MAX_VALUE)
