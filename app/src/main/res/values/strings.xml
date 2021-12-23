@@ -2,4 +2,8 @@
     <string name="app_name">TestBtn</string>
     <string name="word">每日一句</string>
     <string name="source">——《论语》</string>
+    <string name="todo">TODO</string>
+    <string name="sentence">It is not beauty that endears, it’s love that makes us see beauty.</string>
+    <string name="translation">并非美丽招人爱，而是爱让我们看到了美丽。</string>
+    <string name="author">Leo Tolstoy</string>
 </resources>
