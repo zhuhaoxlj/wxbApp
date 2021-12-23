@@ -3,12 +3,16 @@ package com.example.testbtn;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,6 +21,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 
 public class Activity_OneDay extends Activity {
@@ -26,9 +32,12 @@ public class Activity_OneDay extends Activity {
     private ImageView imageView;
     private Bitmap bitmap;
     private String today;
+    private final String apiURL = "https://apiv3.shanbay.com/weapps/dailyquote/quote/?date=";
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_oneday);
         // 隐藏状态栏
@@ -43,7 +52,11 @@ public class Activity_OneDay extends Activity {
         }
         // 获取今天日期
         today = DateUtil.today();
-        Log.e("Today", today);
+        String m_apiURL = apiURL + today;
+        loadImage(m_apiURL);
+
+    }
+    public void loadImage(String url){
         //开启线程加载图片
         new Thread() {
             public void run() {
@@ -51,7 +64,7 @@ public class Activity_OneDay extends Activity {
                 OneDay oneDay = new OneDay();
                 // 获取英文句子、英文句子翻译、英文句子作者、英文图片的网址
                 try {
-                    oneDay.init("https://apiv3.shanbay.com/weapps/dailyquote/quote/");
+                    oneDay.init(url);
 /*
                     {
                         Log.e("img", oneDay.getEnSentence());
@@ -104,5 +117,41 @@ public class Activity_OneDay extends Activity {
             }
         }.start();
     }
-//    https://apiv3.shanbay.com/weapps/dailyquote/quote/?date=2019-06-29
+    /**
+     * 按键监听
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_G) {
+            DateTime day = new DateTime(today);
+            DateTime yesterday = day.offset(DateField.DAY_OF_MONTH, -1);
+            String yesterdayStr = yesterday.toDateStr();
+            String m_apiURL = apiURL+yesterdayStr;
+            today = yesterdayStr;
+            loadImage(m_apiURL);
+            return true;
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_H) {
+            DateTime day = new DateTime(today);
+            DateTime tomorrow = day.offset(DateField.DAY_OF_MONTH, 1);
+            String tomorrowStr = tomorrow.toDateStr();
+            String m_apiURL = apiURL+tomorrowStr;
+            today = tomorrowStr;
+            loadImage(m_apiURL);
+            return true;
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_F) {
+            today = DateUtil.today();
+            String m_apiURL = apiURL+today;
+            loadImage(m_apiURL);
+            return true;
+        }
+//        if (keyCode == KeyEvent.KEYCODE_E) {
+//            sentence.setText("E按下" + (countH++) + "次");
+//            return true;
+//        }
+        return super.onKeyDown(keyCode, event);
+    }
 }
