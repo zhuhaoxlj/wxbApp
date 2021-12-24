@@ -41,7 +41,8 @@ public class Activity_OneDay extends Activity {
         setContentView(R.layout.activity_oneday);
         // 隐藏状态栏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
+        // 屏幕常亮
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // 控件绑定
         {
             imageView = findViewById(R.id.sentenceImg);
