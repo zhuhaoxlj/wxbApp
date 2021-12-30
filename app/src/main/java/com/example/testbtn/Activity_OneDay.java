@@ -1,6 +1,8 @@
 package com.example.testbtn;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -11,13 +13,17 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -31,6 +37,7 @@ public class Activity_OneDay extends Activity {
     private ImageView imageView;
     private Bitmap bitmap;
     private String today;
+    private boolean isPermissionRequested;
     private final String apiURL = "https://apiv3.shanbay.com/weapps/dailyquote/quote/?date=";
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -39,6 +46,7 @@ public class Activity_OneDay extends Activity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_oneday);
+        requestPermission();
         // 隐藏状态栏
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // 屏幕常亮
@@ -55,9 +63,28 @@ public class Activity_OneDay extends Activity {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         today = formatter.format(calendar.getTime());
         String m_apiURL = apiURL + today;
-        loadImage(m_apiURL);
+        //判断是否有网络
+        if (OneDay.isNetworkConnected(this)) {
+            //加载网络资源
+            Toast.makeText(Activity_OneDay.this, "加载网络图片资源", Toast.LENGTH_LONG).show();
+            loadImage(m_apiURL);
+
+        } else {
+            //加载本地资源
+            Toast.makeText(Activity_OneDay.this, "加载本地图片资源", Toast.LENGTH_LONG).show();
+            loadImageFromLocalStorage();
+        }
     }
 
+    public void loadImageFromLocalStorage() {
+
+    }
+
+    /**
+     * 加载网络资源
+     *
+     * @param url 接口链接
+     */
     public void loadImage(String url) {
         //开启线程加载图片
         new Thread() {
@@ -87,21 +114,27 @@ public class Activity_OneDay extends Activity {
                     Map<String, String> headers = new HashMap<>();
                     // 添加请求头到Map
                     headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62");
-                    // 获取图片的InputStream
-                    imgInputStream = OneDay.getImgInputStream(imgURL, headers);
-                    // 将InputStream转为Bitmap
-                    bitmap = BitmapFactory.decodeStream(imgInputStream);
+
                     // 获取外部存储目录
                     String sdPath = Environment.getExternalStorageDirectory().getPath();
-//                    File file = new File(sdPath + "/AAABBB/22.png");
-//                    if (file.exists()) {
-//                        FileInputStream fis = new FileInputStream(file);
-//                        Bitmap bitmap = BitmapFactory.decodeStream(fis);
-//                        Activity activity = (Activity) imageView.getContext();
-//                        activity.runOnUiThread(() -> imageView.setImageBitmap(bitmap));
-//                    } else {
-//
-//                    }
+                    Log.e("sdPath", sdPath);
+                    File file = new File(sdPath + "/AAABBB/" + today + ".png");
+                    if (file.exists()) {
+                        //加载本地图片资源
+                        Toast.makeText(Activity_OneDay.this, "加载本地图片资源", Toast.LENGTH_LONG).show();
+                        FileInputStream fis = new FileInputStream(file);
+                        Bitmap bitmap = BitmapFactory.decodeStream(fis);
+                        Activity activity = (Activity) imageView.getContext();
+                        activity.runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+                    } else {
+                        Toast.makeText(Activity_OneDay.this, "通过网络获取图片", Toast.LENGTH_LONG).show();
+                        // 获取图片的InputStream
+                        imgInputStream = OneDay.getImgInputStream(imgURL, headers);
+                        // 将InputStream转为Bitmap
+                        bitmap = BitmapFactory.decodeStream(imgInputStream);
+                        //将图片保存到本地
+                        oneDay.saveInputStreamImage(imgInputStream, today + ".png");
+                    }
                     Activity activity = (Activity) imageView.getContext();
                     activity.runOnUiThread(() -> {
                         imageView.setImageBitmap(bitmap);
@@ -175,5 +208,37 @@ public class Activity_OneDay extends Activity {
         calendar.setTime(da);
         calendar.add(Calendar.DAY_OF_MONTH, intNum);//日期偏移,正数向前,负数向后!
         return simpleDateFormat.format(calendar.getTime());
+    }
+
+    /**
+     * Android6.0之后需要动态申请权限
+     */
+    private void requestPermission() {
+        if (Build.VERSION.SDK_INT >= 23 && !isPermissionRequested) {
+            isPermissionRequested = true;
+            ArrayList<String> permissionsList = new ArrayList<>();
+            String[] permissions = {
+                    Manifest.permission.ACCESS_NETWORK_STATE,
+                    Manifest.permission.ACCESS_WIFI_STATE,
+                    Manifest.permission.INTERNET,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_WIFI_STATE,
+            };
+
+            for (String perm : permissions) {
+                if (PackageManager.PERMISSION_GRANTED != checkSelfPermission(perm)) {
+                    permissionsList.add(perm);
+                    // 进入到这里代表没有权限.
+                }
+            }
+
+            if (!permissionsList.isEmpty()) {
+                String[] strings = new String[permissionsList.size()];
+                requestPermissions(permissionsList.toArray(strings), 0);
+            }
+        }
     }
 }

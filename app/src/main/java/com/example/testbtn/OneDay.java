@@ -1,7 +1,10 @@
 package com.example.testbtn;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Environment;
 import android.util.Log;
 
@@ -125,24 +128,22 @@ public class OneDay {
      *
      * @param inputStream 图片的InputStream
      */
-    public void saveInputStreamImage(InputStream inputStream) {
+    public void saveInputStreamImage(InputStream inputStream,String fileName) {
         Bitmap mBitmap = BitmapFactory.decodeStream(inputStream);
         //3.保存Bitmap
         try {
             String savePath = getSDCardPath() + "/AAABBB/";
             File temp = new File(savePath);
             //文件
-            String filepath = savePath + "/21.png";
+            String filepath = savePath + "/"+fileName;
             File file = new File(filepath);
             if (!temp.exists()) {
-                Boolean b = temp.mkdirs();
                 Log.e("Bitmap", "Write Successful");
             }
             if (!file.exists()) {
-                Boolean b = file.createNewFile();
                 Log.e("Bitmap","Success");
             }
-            FileOutputStream fos = null;
+            FileOutputStream fos;
             fos = new FileOutputStream(file);
             mBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.flush();
@@ -194,4 +195,22 @@ public class OneDay {
         }
         return stream;
     }
+
+    /**
+     * 判断是否有网络
+     * @param context context
+     * @return 返回是否有网络
+     */
+    public static boolean isNetworkConnected(Context context) {
+        if (context != null) {
+            ConnectivityManager mConnectivityManager = (ConnectivityManager) context
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo mNetworkInfo = mConnectivityManager.getActiveNetworkInfo();
+            if (mNetworkInfo != null) {
+                return mNetworkInfo.isAvailable();
+            }
+        }
+        return false;
+    }
+
 }
